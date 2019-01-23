@@ -7,8 +7,7 @@ void install_service(char *name, char *display_name) {
   SC_HANDLE service_handle;
   char path[MAX_PATH];
 
-  if(!GetModuleFileName(NULL, path, MAX_PATH))
-  {
+  if(!GetModuleFileName(NULL, path, MAX_PATH)) {
     printf("Cannot get the current path to install the service (%d)\n", GetLastError());
     return;
   }
@@ -21,27 +20,28 @@ void install_service(char *name, char *display_name) {
   }
 
   service_handle = CreateService(
-    scmanager_handle,              // SCM database
-    name,                          // name of service
-    display_name,                  // service name to display
-    SERVICE_ALL_ACCESS,            // desired access
-    SERVICE_WIN32_OWN_PROCESS,     // service type
-    SERVICE_DEMAND_START,          // start type
-    SERVICE_ERROR_NORMAL,          // error control type
-    path,                          // path to service's binary
-    NULL,                          // no load ordering group
-    NULL,                          // no tag identifier
-    NULL,                          // no dependencies
-    NULL,                          // LocalSystem account
-    NULL);                         // no password
+    scmanager_handle,
+    name,
+    display_name,
+    SERVICE_ALL_ACCESS,
+    SERVICE_WIN32_OWN_PROCESS, /* Service type. */
+    SERVICE_DEMAND_START,      /* Start type. */
+    SERVICE_ERROR_NORMAL,      /* Error control. */
+    path,                      /* Path to the binary. */
+    NULL,                      /* Load ordering group. */
+    NULL,                      /* Tag identifier. */
+    NULL,                      /* Dependencies. */
+    NULL,                      /* Run as LocalSystem. */
+    NULL                       /* No password. */
+  );
 
-  if(!service_handle)
-  {
+  if(!service_handle) {
     printf("CreateService failed, does the service already exist? (%d)\n", GetLastError());
     CloseServiceHandle(scmanager_handle);
     return;
+  } else {
+    printf("Service installed successfully\n");
   }
-  else printf("Service installed successfully\n");
 
   CloseServiceHandle(service_handle);
   CloseServiceHandle(scmanager_handle);
@@ -59,7 +59,7 @@ void uninstall_service(char *name) {
 
   service_handle = OpenService(scmanager_handle, name, SERVICE_ALL_ACCESS);
   if(!service_handle) {
-    printf("OpenService failed, does the service exist? (%d)\n", GetLastError());
+    printf("OpenService failed, does the service exist? Is services.msc open? (%d)\n", GetLastError());
     CloseServiceHandle(scmanager_handle);
     return;
   }
@@ -67,7 +67,7 @@ void uninstall_service(char *name) {
   if(!DeleteService(service_handle)) {
     printf("DeleteService failed (%d)\n", GetLastError());
   } else {
-    printf("Service installed successfully\n");
+    printf("Service uninstalled successfully\n");
   }
 
   CloseServiceHandle(service_handle);

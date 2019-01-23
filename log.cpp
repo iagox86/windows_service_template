@@ -9,8 +9,7 @@ void log_error(char *func) {
   char buffer[80];
 
   event_source = RegisterEventSource(NULL, "TODO: Service Name");
-  if(event_source)
-  {
+  if(event_source) {
     sprintf(buffer, "%s failed with %d", func, GetLastError());
 
     strings[0] = "TODO: Service Name";
@@ -28,4 +27,10 @@ void log_error(char *func) {
 */
     DeregisterEventSource(event_source);
   }
+}
+
+void log(char *data) {
+  FILE *f = fopen("c:\\users\\ron\\desktop\\log.txt", "a");
+  fprintf(f, "%s\n", data);
+  fclose(f);
 }

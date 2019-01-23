@@ -9,22 +9,25 @@ typedef struct {
 } service_t;
 service_t service = { 0, 0, 0 };
 
-//
-// Purpose:
-//   Sets the current service status and reports it to the SCM.
-//
-// Parameters:
-//   dwCurrentState - The current state (see SERVICE_STATUS)
-//   dwWin32ExitCode - The system error code
-//   dwWaitHint - Estimated time for pending operation,
-//     in milliseconds
-//
-// Return value:
-//   None
-//
-void service_report_status( DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD dwWaitHint)
-{
-  static DWORD dwCheckPoint = 1;
+void do_service_startup_stuff() {
+  /* TODO: Put service startup stuff here. Occasionally call
+     service_report_status() if you're doing anything slow! */
+}
+
+void do_service_run_stuff() {
+  /* TODO: Put service running stuff here. */
+  WaitForSingleObject(service.stop_event, INFINITE);
+}
+
+void do_service_shutdown_stuff() {
+  /* TODO: Put stop-service stuff here. */
+  SetEvent(service.stop_event);
+}
+
+/* Report the current status - the code here is a little black magic-y, it's
+   pulled from MSDN. */
+void service_report_status(DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD dwWaitHint) {
+  static DWORD checkpoint = 1;
 
   /* Fill in the SERVICE_STATUS structure */
   service.service_status.dwCurrentState = dwCurrentState;
@@ -39,115 +42,75 @@ void service_report_status( DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD d
   if((dwCurrentState == SERVICE_RUNNING) || (dwCurrentState == SERVICE_STOPPED))
     service.service_status.dwCheckPoint = 0;
   else
-    service.service_status.dwCheckPoint = dwCheckPoint++;
+    service.service_status.dwCheckPoint = checkpoint++;
 
-  // Report the status of the service to the SCM.
-  SetServiceStatus( service.service_status_handle, &service.service_status );
+  /* Report the status of the service to the SCM. */
+  SetServiceStatus(service.service_status_handle, &service.service_status);
 }
 
-//
-// Purpose:
-//   Called by SCM whenever a control code is sent to the service
-//   using the ControlService function.
-//
-// Parameters:
-//   dwCtrl - control code
-//
-// Return value:
-//   None
-//
-void WINAPI service_control_handler(DWORD dwCtrl)
-{
-   // Handle the requested control code.
+/* This is a callback for when the service status changes. In particular, when
+   the user attempts to stop a service this is notified. */
+void WINAPI service_control_handler(DWORD dwCtrl) {
+   switch(dwCtrl) {
+     /* If the user asked for the service to stop... */
+     case SERVICE_CONTROL_STOP:
+       /* Report that we're stopping. */
+       service_report_status(SERVICE_STOP_PENDING, NO_ERROR, 0);
 
-   switch(dwCtrl)
-   {
-   case SERVICE_CONTROL_STOP:
-     service_report_status(SERVICE_STOP_PENDING, NO_ERROR, 0);
+       do_service_shutdown_stuff();
 
-     // Signal the service to stop.
+       /* Report that se've stopped. */
+       service_report_status(SERVICE_STOPPED, NO_ERROR, 0);
 
-     SetEvent(service.stop_event);
-     service_report_status(service.service_status.dwCurrentState, NO_ERROR, 0);
+       return;
 
-     return;
+     case SERVICE_CONTROL_INTERROGATE:
+       break;
 
-   case SERVICE_CONTROL_INTERROGATE:
-     break;
-
-   default:
-     break;
+     default:
+       break;
    }
-
-}
-
-//
-// Purpose:
-//   The service code
-//
-// Parameters:
-//   argc - Number of arguments in the argv array
-//   argv - Array of strings. The first string is the name of
-//     the service and subsequent strings are passed by the process
-//     that called the StartService function to start the service.
-//
-// Return value:
-//   None
-//
-void service_initialize(DWORD argc, LPTSTR *argv)
-{
-  // TO_DO: Declare and set any required variables.
-  //   Be sure to periodically call service_report_status() with
-  //   SERVICE_START_PENDING. If initialization fails, call
-  //   service_report_status with SERVICE_STOPPED.
-
-  // Create an event. The control handler function, service_control_handler,
-  // signals this event when it receives the stop control code.
-
-  service.stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-  if(!service.stop_event)
-  {
-    service_report_status( SERVICE_STOPPED, NO_ERROR, 0 );
-    return;
-  }
-
-  // Report running status when initialization is complete.
-
-  service_report_status( SERVICE_RUNNING, NO_ERROR, 0 );
-
-  // TO_DO: Perform work until service stops.
-
-  while(1)
-  {
-    // Check whether to stop the service.
-
-    WaitForSingleObject(service.stop_event, INFINITE);
-
-    service_report_status( SERVICE_STOPPED, NO_ERROR, 0 );
-    return;
-  }
 }
 
 /* Service entrypoint. */
-void WINAPI service_main(int argc, char *argv[])
-{
+void WINAPI service_main(int argc, char *argv[]) {
   service_t service;
 
+  /* Register a function to handle service-control requests (in particular,
+     it'll be told when the service is being shut down). */
   service.service_status_handle = RegisterServiceCtrlHandler(SERVICE_NAME, service_control_handler);
-  if(!service.service_status_handle)
-  {
+  if(!service.service_status_handle) {
     log_error("RegisterServiceCtrlHandler");
     return;
   }
 
-  // These SERVICE_STATUS members remain as set here
+  /* Service runs in its own process. */
   service.service_status.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+
+  /* Process has no exit code. */
   service.service_status.dwServiceSpecificExitCode = 0;
 
-  // Report initial status to the SCM
+  /* Let the OS know that the service is starting. */
   service_report_status(SERVICE_START_PENDING, NO_ERROR, 3000);
 
-  // Perform service-specific initialization and work.
+  /* Do startup stuff */
+  do_service_startup_stuff();
 
-  service_initialize(argc, argv );
+  /* Create an event that'll kill the process. */
+  service.stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+  if(!service.stop_event) {
+    /* If the event creation fails, report the event stopped and return. */
+    service_report_status(SERVICE_STOPPED, NO_ERROR, 0);
+    log_error("CreateEvent");
+    return;
+  }
+
+  /* Report that the service is now running. */
+  service_report_status(SERVICE_RUNNING, NO_ERROR, 0);
+
+  /* Do running stuff. */
+  do_service_run_stuff();
+
+  /* Report that the service is done. */
+  service_report_status(SERVICE_STOPPED, NO_ERROR, 0);
 }

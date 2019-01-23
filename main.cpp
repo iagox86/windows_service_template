@@ -11,14 +11,13 @@ void usage(char *argv0) {
   printf("Usage: %s <install|uninstall>", argv0);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   if(argc > 1) {
     if(!strcmp( argv[1], "install")) {
       printf("Installing the service %s => %s...\n", SERVICE_NAME, SERVICE_DISPLAY_NAME);
       install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME);
     } else if(!strcmp(argv[1], "uninstall")) {
-      printf("Installing the service %s...\n", SERVICE_NAME);
+      printf("Uninstalling the service %s...\n", SERVICE_NAME);
       uninstall_service(SERVICE_NAME);
     } else {
       printf("Unknown command: %s!\n", argv[1]);
@@ -32,8 +31,7 @@ int main(int argc, char *argv[])
     usage(argv[0]);
   }
 
-  SERVICE_TABLE_ENTRY DispatchTable[] =
-  {
+  SERVICE_TABLE_ENTRY DispatchTable[] = {
     { SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION) service_main },
     { NULL, NULL }
   };
