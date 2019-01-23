@@ -12,6 +12,8 @@ void usage(char *argv0) {
 }
 
 int main(int argc, char *argv[]) {
+  HANDLE event = CreateEvent(NULL, TRUE, FALSE, NULL);
+
   if(argc > 1) {
     if(!strcmp( argv[1], "install")) {
       printf("Installing the service %s => %s...\n", SERVICE_NAME, SERVICE_DISPLAY_NAME);
@@ -38,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   /* This call returns when the service stops. */
   if(!StartServiceCtrlDispatcher( DispatchTable )) {
-    log_error("StartServiceCtrlDispatcher");
+    log_error("StartServiceCtrlDispatcher failed!");
   }
 
   return 0;

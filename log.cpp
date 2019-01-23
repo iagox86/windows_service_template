@@ -2,6 +2,7 @@
 #include <windows.h>
 #include "log.h"
 
+#if 0
 /* TODO: Use this */
 void log_error(char *func) {
   HANDLE event_source;
@@ -28,9 +29,43 @@ void log_error(char *func) {
     DeregisterEventSource(event_source);
   }
 }
+#endif
 
-void log(char *data) {
-  FILE *f = fopen("c:\\users\\ron\\desktop\\log.txt", "a");
-  fprintf(f, "%s\n", data);
+void log_error(char *format, ...) {
+  va_list  args;
+  int      len;
+  char    *buffer;
+  FILE    *f = fopen("c:\\users\\ron\\desktop\\log.txt", "a");
+
+  va_start( args, format );
+  len = _vscprintf( format, args ) + 1; /* +1 for terminating \0 */
+
+  buffer = (char*) malloc(len);
+
+  vsprintf(buffer, format, args);
+
+  fprintf(f, "Error %d: %s\n", GetLastError(), buffer);
   fclose(f);
+
+  free(buffer);
+  va_end(args);
+}
+void log_event(char *format, ...) {
+  va_list  args;
+  int      len;
+  char    *buffer;
+  FILE    *f = fopen("c:\\users\\ron\\desktop\\log.txt", "a");
+
+  va_start( args, format );
+  len = _vscprintf( format, args ) + 1; /* +1 for terminating \0 */
+
+  buffer = (char*) malloc(len);
+
+  vsprintf(buffer, format, args);
+
+  fprintf(f, "%s\n", buffer);
+  fclose(f);
+
+  free(buffer);
+  va_end(args);
 }
