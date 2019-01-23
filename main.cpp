@@ -5,8 +5,6 @@
 #include "service_cli.h"
 #include "service.h"
 
-#pragma comment(lib, "advapi32.lib")
-
 void usage(char *argv0) {
   printf("Usage: %s <install|uninstall>", argv0);
 }
