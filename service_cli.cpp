@@ -37,7 +37,7 @@ void install_service(char *name, char *display_name) {
 
   if(!service_handle)
   {
-    printf("CreateService failed (%d)\n", GetLastError());
+    printf("CreateService failed, does the service already exist? (%d)\n", GetLastError());
     CloseServiceHandle(scmanager_handle);
     return;
   }
@@ -59,7 +59,7 @@ void uninstall_service(char *name) {
 
   service_handle = OpenService(scmanager_handle, name, SERVICE_ALL_ACCESS);
   if(!service_handle) {
-    printf("OpenService failed (%d)\n", GetLastError());
+    printf("OpenService failed, does the service exist? (%d)\n", GetLastError());
     CloseServiceHandle(scmanager_handle);
     return;
   }
