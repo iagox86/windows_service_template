@@ -1,9 +1,5 @@
 #include <windows.h>
-#include <tchar.h>
-#include <strsafe.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /* Installs the service in the Windows service manager. */
 void install_service(char *name, char *display_name) {

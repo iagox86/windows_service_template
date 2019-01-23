@@ -2,11 +2,6 @@
 #define __SERVICE_H__
 
 #include <windows.h>
-#include <tchar.h>
-#include <strsafe.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /* Changes the service name (for commandline) */
 #define SERVICE_NAME         "test_service"
