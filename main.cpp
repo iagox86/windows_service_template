@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 
+#include "log.h"
 #include "service_cli.h"
 #include "service.h"
 

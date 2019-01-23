@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include "log.h"
 
 #include "service.h"
 
@@ -8,35 +8,6 @@ typedef struct {
   HANDLE stop_event;
 } service_t;
 service_t service = { 0, 0, 0 };
-
-/* TODO: Use this */
-void log_error(char *szFunction) {
-  HANDLE event_source;
-  char *strings[2];
-  char buffer[80];
-
-  event_source = RegisterEventSource(NULL, SERVICE_NAME);
-  if(event_source)
-  {
-    sprintf(buffer, "%s failed with %d", szFunction, GetLastError());
-
-    strings[0] = SERVICE_NAME;
-    strings[1] = buffer;
-
-/*        ReportEvent(event_source,        // event log handle
-            EVENTLOG_ERROR_TYPE, // event type
-            0,                   // event category
-            SVC_ERROR,           // event identifier
-            NULL,                // no security identifier
-            2,                   // size of strings array
-            0,                   // no binary data
-            strings,         // array of strings
-            NULL);               // no binary data
-*/
-    DeregisterEventSource(event_source);
-  }
-}
-
 
 //
 // Purpose:
@@ -157,22 +128,9 @@ void service_initialize(DWORD argc, LPTSTR *argv)
   }
 }
 
-//
-// Purpose:
-//   Entry point for the service
-//
-// Parameters:
-//   argc - Number of arguments in the argv array
-//   argv - Array of strings. The first string is the name of
-//     the service and subsequent strings are passed by the process
-//     that called the StartService function to start the service.
-//
-// Return value:
-//   None.
-//
+/* Service entrypoint. */
 void WINAPI service_main(int argc, char *argv[])
 {
-  // Register the handler function for the service
   service_t service;
 
   service.service_status_handle = RegisterServiceCtrlHandler(SERVICE_NAME, service_control_handler);
@@ -192,6 +150,4 @@ void WINAPI service_main(int argc, char *argv[])
   // Perform service-specific initialization and work.
 
   service_initialize(argc, argv );
-
 }
-
