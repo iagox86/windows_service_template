@@ -2,3 +2,4 @@ Debug
 *.user
 *.suo
 *.sln
+*.ncb
