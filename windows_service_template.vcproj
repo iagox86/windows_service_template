@@ -171,19 +171,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\log.c"
+				RelativePath=".\src\log.c"
 				>
 			</File>
 			<File
-				RelativePath=".\main.c"
+				RelativePath=".\src\main.c"
 				>
 			</File>
 			<File
-				RelativePath=".\service.c"
+				RelativePath=".\src\service.c"
 				>
 			</File>
 			<File
-				RelativePath=".\service_cli.c"
+				RelativePath=".\src\service_cli.c"
 				>
 			</File>
 		</Filter>
@@ -193,15 +193,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\log.h"
+				RelativePath=".\src\log.h"
 				>
 			</File>
 			<File
-				RelativePath=".\service.h"
+				RelativePath=".\src\service.h"
 				>
 			</File>
 			<File
-				RelativePath=".\service_cli.h"
+				RelativePath=".\src\service_cli.h"
 				>
 			</File>
 		</Filter>
