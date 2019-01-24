@@ -15,7 +15,7 @@ static void log_internal(int type, char *log_name, char *message) {
       event_source, /* hEventLog */
       type,         /* dwType */
       0,            /* wCategory */
-      0,            /* DWORD  dwEventID TODO Might want to use this? */
+      0,            /* DWORD  dwEventID */
       NULL,         /* PSID   lpUserSid, */
       1,            /* WORD   wNumStrings - number of text strings */
       0,            /* DWORD  dwDataSize - bytes of binary data */
