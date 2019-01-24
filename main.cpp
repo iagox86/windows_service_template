@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 
   /* This call returns when the service stops. */
   if(!StartServiceCtrlDispatcher( DispatchTable )) {
-    log_error("StartServiceCtrlDispatcher failed!");
+    SERVICE_ERROR("StartServiceCtrlDispatcher failed!");
   }
 
   return 0;

@@ -2,40 +2,35 @@
 #include <windows.h>
 #include "log.h"
 
-#if 0
-/* TODO: Use this */
-void log_error(char *func) {
+/* Types: EVENTLOG_SUCCESS, EVENTLOG_INFORMATION_TYPE, EVENTLOG_WARNING_TYPE, EVENTLOG_ERROR_TYPE */
+static void log_internal(int type, char *log_name, char *message) {
   HANDLE event_source;
-  char *strings[2];
-  char buffer[80];
 
-  event_source = RegisterEventSource(NULL, "TODO: Service Name");
+  event_source = RegisterEventSource(NULL, log_name);
   if(event_source) {
-    sprintf(buffer, "%s failed with %d", func, GetLastError());
+    const char *strings[1];
+    strings[0] = message;
 
-    strings[0] = "TODO: Service Name";
-    strings[1] = buffer;
+    ReportEvent(
+      event_source, /* hEventLog */
+      type,         /* dwType */
+      0,            /* wCategory */
+      0,            /* DWORD  dwEventID TODO Might want to use this? */
+      NULL,         /* PSID   lpUserSid, */
+      1,            /* WORD   wNumStrings - number of text strings */
+      0,            /* DWORD  dwDataSize - bytes of binary data */
+      strings,      /* LPCSTR *lpStrings - text strings */
+      NULL          /* LPVOID lpRawData - binary data */
+    );
 
-/*        ReportEvent(event_source,        // event log handle
-            EVENTLOG_ERROR_TYPE, // event type
-            0,                   // event category
-            SVC_ERROR,           // event identifier
-            NULL,                // no security identifier
-            2,                   // size of strings array
-            0,                   // no binary data
-            strings,         // array of strings
-            NULL);               // no binary data
-*/
     DeregisterEventSource(event_source);
   }
 }
-#endif
 
-void log_error(char *format, ...) {
+void log_error(int log_level, char *service_name, char *format, ...) {
   va_list  args;
   int      len;
   char    *buffer;
-  FILE    *f = fopen("c:\\users\\ron\\desktop\\log.txt", "a");
 
   va_start( args, format );
   len = _vscprintf( format, args ) + 1; /* +1 for terminating \0 */
@@ -44,27 +39,23 @@ void log_error(char *format, ...) {
 
   vsprintf(buffer, format, args);
 
-  fprintf(f, "Error %d: %s\n", GetLastError(), buffer);
-  fclose(f);
+  log_internal(log_level, service_name, buffer);
 
   free(buffer);
   va_end(args);
 }
-void log_event(char *format, ...) {
+
+void log_event(int log_level, char *service_name, char *format, ...) {
   va_list  args;
   int      len;
   char    *buffer;
-  FILE    *f = fopen("c:\\users\\ron\\desktop\\log.txt", "a");
 
   va_start( args, format );
   len = _vscprintf( format, args ) + 1; /* +1 for terminating \0 */
-
   buffer = (char*) malloc(len);
-
   vsprintf(buffer, format, args);
 
-  fprintf(f, "%s\n", buffer);
-  fclose(f);
+  log_internal(log_level, service_name, buffer);
 
   free(buffer);
   va_end(args);

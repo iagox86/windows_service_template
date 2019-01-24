@@ -12,19 +12,19 @@ service_t service = { 0, 0, 0 };
 void do_service_startup_stuff() {
   /* TODO: Put service startup stuff here. Occasionally call
      service_report_status() if you're doing anything slow! */
-  log_event("(do_service_startup_stuff goes here)");
+  SERVICE_INFO("(do_service_startup_stuff goes here)");
 }
 
 void do_service_run_stuff() {
   /* TODO: Put service running stuff here. */
-  log_event("Waiting for service.stop_event signal...");
+  SERVICE_INFO("Waiting for service.stop_event signal...");
   WaitForSingleObject(service.stop_event, INFINITE);
-  log_event("...received service.stop_event signal!");
+  SERVICE_INFO("...received service.stop_event signal!");
 }
 
 void do_service_shutdown_stuff() {
   /* TODO: Put stop-service stuff here. */
-  log_event("(do_service_shutdown_stuff goes here)");
+  SERVICE_INFO("(do_service_shutdown_stuff goes here)");
   SetEvent(service.stop_event);
 }
 
@@ -58,7 +58,7 @@ void WINAPI service_control_handler(DWORD dwCtrl) {
    switch(dwCtrl) {
      /* If the user asked for the service to stop... */
      case SERVICE_CONTROL_STOP:
-       log_event("Received a SERVICE_CONTROL_STOP signal!");
+       SERVICE_INFO("Received a SERVICE_CONTROL_STOP signal!");
 
        /* Report that we're stopping. */
        service_report_status(SERVICE_STOP_PENDING, NO_ERROR, 0);
@@ -104,7 +104,7 @@ void WINAPI service_main(int argc, char *argv[]) {
   if(!service.stop_event) {
     /* If the event creation fails, report the event stopped and return. */
     service_report_status(SERVICE_STOPPED, NO_ERROR, 0);
-    log_error("CreateEvent failed!");
+    SERVICE_ERROR("CreateEvent failed!");
     return;
   }
 
