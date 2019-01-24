@@ -5,27 +5,30 @@
 typedef struct {
   SERVICE_STATUS service_status;
   SERVICE_STATUS_HANDLE service_status_handle;
-  HANDLE stop_event;
 } service_t;
-service_t service = { 0, 0, 0 };
+service_t service;
 
+static HANDLE stop_event = NULL;
 void do_service_startup_stuff() {
   /* TODO: Put service startup stuff here. Occasionally call
      service_report_status() if you're doing anything slow! */
   SERVICE_INFO("(do_service_startup_stuff goes here)");
+
+  /* Create an event that'll kill the process. */
+  stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
 }
 
 void do_service_run_stuff() {
   /* TODO: Put service running stuff here. */
-  SERVICE_INFO("Waiting for service.stop_event signal...");
-  WaitForSingleObject(service.stop_event, INFINITE);
-  SERVICE_INFO("...received service.stop_event signal!");
+  SERVICE_INFO("Waiting for stop_event signal...");
+  WaitForSingleObject(stop_event, INFINITE);
+  SERVICE_INFO("...received stop_event signal!");
 }
 
 void do_service_shutdown_stuff() {
   /* TODO: Put stop-service stuff here. */
   SERVICE_INFO("(do_service_shutdown_stuff goes here)");
-  SetEvent(service.stop_event);
+  SetEvent(stop_event);
 }
 
 /* Report the current status - the code here is a little black magic-y, it's
@@ -98,15 +101,6 @@ void WINAPI service_main(int argc, char *argv[]) {
 
   /* Do startup stuff */
   do_service_startup_stuff();
-
-  /* Create an event that'll kill the process. */
-  service.stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-  if(!service.stop_event) {
-    /* If the event creation fails, report the event stopped and return. */
-    service_report_status(SERVICE_STOPPED, NO_ERROR, 0);
-    SERVICE_ERROR("CreateEvent failed!");
-    return;
-  }
 
   /* Report that the service is now running. */
   service_report_status(SERVICE_RUNNING, NO_ERROR, 0);
