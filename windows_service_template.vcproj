@@ -171,19 +171,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\log.cpp"
+				RelativePath=".\log.c"
 				>
 			</File>
 			<File
-				RelativePath=".\main.cpp"
+				RelativePath=".\main.c"
 				>
 			</File>
 			<File
-				RelativePath=".\service.cpp"
+				RelativePath=".\service.c"
 				>
 			</File>
 			<File
-				RelativePath=".\service_cli.cpp"
+				RelativePath=".\service_cli.c"
 				>
 			</File>
 		</Filter>
