@@ -10,7 +10,7 @@ void install_service(char *name, char *display_name, char *user, char *password)
   char path[MAX_PATH];
 
   if(!GetModuleFileName(NULL, path, MAX_PATH)) {
-    fprintf(stderr, "Cannot get the current path to install the service (%d)\n", GetLastError());
+    fprintf(stderr, "Cannot get the current path to install the service: %d\n", GetLastError());
     return;
   }
 
@@ -63,20 +63,30 @@ void install_service(char *name, char *display_name, char *user, char *password)
   CloseServiceHandle(scmanager_handle);
 }
 
-void update_service_permissions(char *name) {
+void give_permission_to(char *service_name, WELL_KNOWN_SID_TYPE sid_type) {
   SC_HANDLE scmanager_handle;
   SC_HANDLE service_handle;
-  DWORD dummy, dummy2;
-  PSECURITY_DESCRIPTOR security_descriptor = NULL;
+
+  DWORD dummy;
+
+  DWORD old_security_descriptor_length = 8192;
+  PSECURITY_DESCRIPTOR old_security_descriptor = (PSECURITY_DESCRIPTOR) malloc(8192);
   SECURITY_DESCRIPTOR new_security_descriptor;
-  PACL acl = NULL;
+  PACL old_acl = NULL;
   PACL new_acl = NULL;
-  PSID sid = NULL;
+
+  DWORD sid_length = 0x100;
+  PSID sid = (PSID) malloc(0x100);
+
+  DWORD account_name_length = 0x200;
   char account_name[0x200];
+  DWORD account_domain_length = 0x200;
   char account_domain[0x200];
+
   SID_NAME_USE eUse;
   EXPLICIT_ACCESS explicit_access;
 
+  /* Get a handle to the service control manager. */
   scmanager_handle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
   if(!scmanager_handle) {
     DWORD error = GetLastError();
@@ -85,89 +95,84 @@ void update_service_permissions(char *name) {
     if(error == 5) {
       fprintf(stderr, " (access denied)\n");
     }
-    return;
+
+    goto close_scmanager_handle;
   }
 
-  service_handle = OpenService(scmanager_handle, name, SERVICE_ALL_ACCESS);
+  /* Get a handle to the service. */
+  service_handle = OpenService(scmanager_handle, service_name, SERVICE_ALL_ACCESS);
   if(!service_handle) {
     DWORD error = GetLastError();
 
-    fprintf(stderr, "OpenService failed: (%d)\n", error);
+    fprintf(stderr, "OpenService failed: %d\n", error);
     if(error == 1060) {
       fprintf(stderr, " -> Service does not exist\n");
     }
-    CloseServiceHandle(scmanager_handle);
-    return;
+
+    goto close_scmanager_handle;
   }
 
-  /* 8192 is the max possible size according to documentation. */
-  security_descriptor = (PSECURITY_DESCRIPTOR) malloc(8192);
-  printf("%p\n", security_descriptor);
-  if(!QueryServiceObjectSecurity(service_handle, 4, security_descriptor, 8192, &dummy)) {
-    DWORD error = GetLastError();
-    fprintf(stderr, "Error querying service object security: %d\n", error);
-    return;
+  /* Get the current security descriptor - 8192 is the max size, according to
+     MSDN */
+  if(!QueryServiceObjectSecurity(service_handle, 4, old_security_descriptor, old_security_descriptor_length, &old_security_descriptor_length)) {
+    fprintf(stderr, "Error querying service object security: %d\n", GetLastError());
+    goto close_service_handle;
   }
 
-  if(!GetSecurityDescriptorDacl(security_descriptor, &dummy, &acl, &dummy2)) {
-    DWORD error = GetLastError();
-    fprintf(stderr, "Error getting security descriptor: %d\n", error);
-    return;
-  }
-  if(!dummy) {
-    fprintf(stderr, "No DACL was included in the security descriptor!\n");
-    return;
+  /* Get the current DACL */
+  if(!GetSecurityDescriptorDacl(old_security_descriptor, &dummy, &old_acl, &dummy)) {
+    fprintf(stderr, "Error getting security descriptor: %d\n", GetLastError());
+    goto close_service_handle;
   }
 
-  sid = (PSID) malloc(0x44); /* TODO: No idea where this comes from. */
-  dummy = 0x44;
-  if(!CreateWellKnownSid(WinBuiltinUsersSid, NULL, sid, &dummy)) {
-    DWORD error = GetLastError();
-    fprintf(stderr, "Error getting well known SID: %d\n", error);
-    return;
+  /* Get a SID handle for the user type they're granting permission to. */
+  if(!CreateWellKnownSid(sid_type, NULL, sid, &sid_length)) {
+    fprintf(stderr, "Error getting well known SID: %d\n", GetLastError());
+    goto close_service_handle;
   }
 
-  dummy = 0x200;
-  if(!LookupAccountSid(NULL, sid, account_name, &dummy, account_domain, &dummy, &eUse)) {
-    DWORD error = GetLastError();
-    fprintf(stderr, "Error looking up account name: %d\n", error);
-    return;
+  /* Get the account associated with the given SID */
+  if(!LookupAccountSid(NULL, sid, account_name, &account_name_length, account_domain, &account_domain_length, &eUse)) {
+    fprintf(stderr, "Error looking up account name: %d\n", GetLastError());
+    goto close_service_handle;
   }
 
-  printf("%s\\%s\n", account_domain, account_name);
+  /* Build an ACL with permission to start and stop the service. */
+  BuildExplicitAccessWithName(&explicit_access, account_name, GENERIC_READ | SERVICE_START | SERVICE_STOP, SET_ACCESS, 0);
 
-  /* FreeSid(&sid); TODO y u no work? */
-
-  BuildExplicitAccessWithName(&explicit_access, account_name, 0x80000030, 2, 0);
-
-  if(SetEntriesInAcl(1, &explicit_access, acl, &new_acl) != ERROR_SUCCESS) {
+  /* Create a new ACL with the new permission. */
+  if(SetEntriesInAcl(1, &explicit_access, old_acl, &new_acl) != ERROR_SUCCESS) {
     fprintf(stderr, "Error setting entries in ACL\n");
-    return;
+    goto close_service_handle;
   }
 
+  /* Create an empty security descriptor. */
   if(!InitializeSecurityDescriptor(&new_security_descriptor, SECURITY_DESCRIPTOR_REVISION)) {
-    DWORD error = GetLastError();
-    fprintf(stderr, "Error initializing security descriptor: %d\n", error);
-    return;
+    fprintf(stderr, "Error initializing security descriptor: %d\n", GetLastError());
+    goto close_service_handle;
   }
 
-  if(!SetSecurityDescriptorDacl(&new_security_descriptor, 1, new_acl, 0)) {
-    DWORD error = GetLastError();
-    fprintf(stderr, "Error setting DACL: %d\n", error);
-    return;
+  /* Update the DACL in the new security decriptor. */
+  if(!SetSecurityDescriptorDacl(&new_security_descriptor, TRUE, new_acl, FALSE)) {
+    fprintf(stderr, "Error setting DACL: %d\n", GetLastError());
+    goto close_service_handle;
   }
 
-  if(!SetServiceObjectSecurity(service_handle, 4 /* TODO */, &new_security_descriptor)) {
-    DWORD error = GetLastError();
-    fprintf(stderr, "Error setting service object security: %d\n", error);
-    return;
+  /* Set the service's security to the new security descriptor. */
+  printf("%d == 4\n", DACL_SECURITY_INFORMATION);
+  if(!SetServiceObjectSecurity(service_handle, DACL_SECURITY_INFORMATION, &new_security_descriptor)) {
+    fprintf(stderr, "Error setting service object security: %d\n", GetLastError());
+    goto close_service_handle;
   }
 
-  printf("okay5...\n");
+  printf("Done!\n");
 
-
+close_service_handle:
   CloseServiceHandle(service_handle);
+close_scmanager_handle:
   CloseServiceHandle(scmanager_handle);
+  free(old_security_descriptor);
+  free(sid);
 }
 
 void uninstall_service(char *name) {
@@ -189,7 +194,7 @@ void uninstall_service(char *name) {
   if(!service_handle) {
     DWORD error = GetLastError();
 
-    fprintf(stderr, "OpenService failed: (%d)\n", error);
+    fprintf(stderr, "OpenService failed: %d\n", error);
     if(error == 1060) {
       fprintf(stderr, " -> Service does not exist\n");
     }

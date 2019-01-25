@@ -6,7 +6,7 @@
 #include "service.h"
 
 void usage(char *name) {
-  printf("Usage: %s <install|uninstall> [.\\<user> <password>]", name);
+  printf("Usage: %s <install [.\\<user> <password>]|uninstall|set_permission> ", name);
 }
 
 int main(int argc, char *argv[]) {
@@ -31,8 +31,8 @@ int main(int argc, char *argv[]) {
     } else if(!strcmp(argv[1], "uninstall")) {
       printf("Uninstalling the service %s...\n", SERVICE_NAME);
       uninstall_service(SERVICE_NAME);
-    } else if(!strcmp(argv[1], "test")) { /* TODO: Delete me */
-      update_service_permissions(SERVICE_NAME);
+    } else if(!strcmp(argv[1], "set_permission")) {
+      give_permission_to(SERVICE_NAME, WinBuiltinUsersSid);
     } else {
       printf("Unknown command: %s!\n", argv[1]);
       usage(argv[0]);
