@@ -159,7 +159,6 @@ void give_permission_to(char *service_name, WELL_KNOWN_SID_TYPE sid_type) {
   }
 
   /* Set the service's security to the new security descriptor. */
-  printf("%d == 4\n", DACL_SECURITY_INFORMATION);
   if(!SetServiceObjectSecurity(service_handle, DACL_SECURITY_INFORMATION, &new_security_descriptor)) {
     fprintf(stderr, "Error setting service object security: %d\n", GetLastError());
     goto close_service_handle;
