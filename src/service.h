@@ -9,6 +9,9 @@
 /* Changes the service display name */
 #define SERVICE_DISPLAY_NAME "Test Service"
 
+/* Changes the service decription */
+#define SERVICE_DESCRIPTION "This is my test service"
+
 /* Log helpers that include service information */
 #define SERVICE_INFO(f, ...)    log_event(EVENTLOG_INFORMATION_TYPE, SERVICE_DISPLAY_NAME, "%s:%d %s() :: "f, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
 #define SERVICE_WARNING(f, ...) log_event(EVENTLOG_WARNING_TYPE,     SERVICE_DISPLAY_NAME, "%s:%d %s() :: "f, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)

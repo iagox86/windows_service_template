@@ -22,11 +22,11 @@ int main(int argc, char *argv[]) {
       if(argc > 3) {
         /* Install as a user account */
         printf("Installing the service %s => %s...\n", SERVICE_NAME, SERVICE_DISPLAY_NAME);
-        install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME, argv[2], argv[3]);
+        install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME, argv[2], argv[3], SERVICE_DESCRIPTION);
       } else {
         /* Install as LocalSystem */
         printf("Installing the service %s => %s...\n", SERVICE_NAME, SERVICE_DISPLAY_NAME);
-        install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME, NULL, NULL);
+        install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME, NULL, NULL, SERVICE_DESCRIPTION);
       }
     } else if(!strcmp(argv[1], "uninstall")) {
       printf("Uninstalling the service %s...\n", SERVICE_NAME);

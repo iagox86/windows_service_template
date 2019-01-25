@@ -4,7 +4,7 @@
 #include <accctrl.h>
 
 /* Installs the service in the Windows service manager. */
-void install_service(char *name, char *display_name, char *user, char *password) {
+void install_service(char *name, char *display_name, char *user, char *password, char *description) {
   SC_HANDLE scmanager_handle;
   SC_HANDLE service_handle;
   char path[MAX_PATH];
@@ -46,17 +46,24 @@ void install_service(char *name, char *display_name, char *user, char *password)
     DWORD error = GetLastError();
     fprintf(stderr, "CreateService failed: %d\n", error);
     if(error == 1057) {
-      fprintf(stderr, " -> check the user account and password, don't forget to use .\\user for local account: %s / %s\n", user, password);
+      fprintf(stderr, " -> bad user! Check the user account and password, don't forget to use .\\user for local account: %s / %s\n", user, password);
     } else if (error == 1073) {
-      fprintf(stderr, " -> service already exists\n");
+      fprintf(stderr, " -> service already exists!\n");
     } else if (error == 1072) {
-      fprintf(stderr, " -> service marked for deletion (close services.msc or reboot)\n");
+      fprintf(stderr, " -> service marked for deletion (close services.msc or reboot)!\n");
     }
 
     CloseServiceHandle(scmanager_handle);
     return;
   } else {
-    printf("Service installed successfully\n");
+    printf("Service installed!");
+    if(description) {
+      SERVICE_DESCRIPTION sd;
+      sd.lpDescription = description;
+      if(!ChangeServiceConfig2(service_handle, SERVICE_CONFIG_DESCRIPTION, &sd)) {
+        fprintf(stderr, "...but couldn't set the description!");
+      }
+    }
   }
 
   CloseServiceHandle(service_handle);
