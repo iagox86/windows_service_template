@@ -5,8 +5,8 @@
 #include "service_cli.h"
 #include "service.h"
 
-void usage(char *argv0) {
-  printf("Usage: %s <install|uninstall>", argv0);
+void usage(char *name) {
+  printf("Usage: %s <install|uninstall> [.\\<user> <password>]", name);
 }
 
 int main(int argc, char *argv[]) {
@@ -18,12 +18,21 @@ int main(int argc, char *argv[]) {
   };
 
   if(argc > 1) {
-    if(!strcmp( argv[1], "install")) {
-      printf("Installing the service %s => %s...\n", SERVICE_NAME, SERVICE_DISPLAY_NAME);
-      install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME);
+    if(!strcmp(argv[1], "install")) {
+      if(argc > 3) {
+        /* Install as a user account */
+        printf("Installing the service %s => %s...\n", SERVICE_NAME, SERVICE_DISPLAY_NAME);
+        install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME, argv[2], argv[3]);
+      } else {
+        /* Install as LocalSystem */
+        printf("Installing the service %s => %s...\n", SERVICE_NAME, SERVICE_DISPLAY_NAME);
+        install_service(SERVICE_NAME, SERVICE_DISPLAY_NAME, NULL, NULL);
+      }
     } else if(!strcmp(argv[1], "uninstall")) {
       printf("Uninstalling the service %s...\n", SERVICE_NAME);
       uninstall_service(SERVICE_NAME);
+    } else if(!strcmp(argv[1], "test")) { /* TODO: Delete me */
+      update_service_permissions(SERVICE_NAME);
     } else {
       printf("Unknown command: %s!\n", argv[1]);
       usage(argv[0]);
