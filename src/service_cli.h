@@ -9,8 +9,9 @@
  * display_name: The name displayed to the user
  * user: The user account the service runs under (or NULL for SYSTEM)
  * password: The password for the user account (or NULL for SYSTEM)
+ * description: A description for the service (or NULL for blank)
  */
-void install_service(char *name, char *display_name, char *user, char *password);
+void install_service(char *name, char *display_name, char *user, char *password, char *description);
 
 /* Uninstall the service with the given name.
  *
