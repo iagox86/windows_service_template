@@ -18,7 +18,35 @@ $ build.bat
 Which builds both `Debug` and `Release` builds, based on the `.vcproj` file.
 You can also load up the `.vcproj` file in Visual Studio and compile it there.
 
-## Writing a service
+## Structure
+
+There are two main pieces to this project that are tied together by
+[main.c](/src/main.c):
+
+The first is [service_cli.c](/src/service_cli.c) - it's a module for
+programmatically installing, uninstalling, or updating permissions on a Windows
+service. See [service_cli.h](/src/service_cli.h) for documentation on each
+function, and [main.c](/src/main.c) for a usage example.
+
+The second is [service.c](/src/service.c) - it implements a simple Windows
+service.
+
+There is also a small logging framework that logs messages to the system
+EventLog - it can be found in [log.c](/src/log.c).
+
+### Using the CLI
+
+The CLI is mostly self documenting - see [service_cli.h](/src/service_cli.h).
+
+The most complex part is probably the permissions. Setting permissions on a
+service is fairly intricate, but using the service_cli API is pretty easy.
+
+Effectively, if you call `set_permission("name", WinBuiltinUsersSid)`, it will
+grant built-in users the ability to start and stop that service. That's not
+generally a great idea - it's essentially RCE - but it's something I wanted to
+be able to do.
+
+### Writing a service
 
 Basically, there are three parts to writing a service...
 
@@ -39,7 +67,7 @@ Basically, there are three parts to writing a service...
 
 Other than that, the world is your oyster!
 
-## Logging
+### Logging
 
 I created some simple log functions: `SERVICE_INFO()`, `SERVICE_WARNING()`, and
 `SERVICE_ERROR()`. They take printf-style varargs, and send the output to the
